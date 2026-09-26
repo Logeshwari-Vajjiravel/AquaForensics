@@ -1,0 +1,25 @@
+[
+  { "waterBodyId": "pallikaranai", "type": "Historical Observation", "year": 1990, "finding": "Historical marsh extent remained significantly larger and more connected than the current footprint.", "data": "Water area 124 ha", "confidence": "High" },
+  { "waterBodyId": "pallikaranai", "type": "Historical Observation", "year": 2025, "finding": "Current extent is reduced and fragmented, with dense surrounding urban land use.", "data": "Water area 47 ha", "confidence": "High" },
+  { "waterBodyId": "pallikaranai", "type": "Water Area Change", "year": 1990, "finding": "Large reduction in the observed water area by 2025.", "data": "Loss of 77 ha", "confidence": "High" },
+  { "waterBodyId": "pallikaranai", "type": "Built-up Change", "year": 2000, "finding": "Built-up cover increased as the wetland edge lost continuity.", "data": "Built-up area 12 ha to 68 ha", "confidence": "Medium" },
+  { "waterBodyId": "pallikaranai", "type": "Flood Exposure", "year": 2025, "finding": "Low-lying downstream areas remain relevant to flood risk assessment.", "data": "Demonstration flood-risk layer", "confidence": "Medium" },
+
+  { "waterBodyId": "velachery", "type": "Historical Observation", "year": 1990, "finding": "Lake extent was broader with a less urbanized fringe.", "data": "Water area 96 ha", "confidence": "High" },
+  { "waterBodyId": "velachery", "type": "Historical Observation", "year": 2025, "finding": "Current footprint is reduced and more isolated within urban land use.", "data": "Water area 38 ha", "confidence": "High" },
+  { "waterBodyId": "velachery", "type": "Water Area Change", "year": 1990, "finding": "Water loss remains substantial across the observation period.", "data": "Loss of 58 ha", "confidence": "High" },
+  { "waterBodyId": "velachery", "type": "Built-up Change", "year": 2000, "finding": "Built-up expansion intensified near the lake boundary.", "data": "Built-up area 16 ha to 63 ha", "confidence": "High" },
+
+  { "waterBodyId": "porur", "type": "Historical Observation", "year": 1990, "finding": "Previous observations show a broader lake footprint than the current state.", "data": "Water area 83 ha", "confidence": "High" },
+  { "waterBodyId": "porur", "type": "Historical Observation", "year": 2025, "finding": "The lake remains reduced but retains a moderate current footprint.", "data": "Water area 49 ha", "confidence": "High" },
+  { "waterBodyId": "porur", "type": "Water Area Change", "year": 1990, "finding": "The body has lost a significant share of its historical extent.", "data": "Loss of 34 ha", "confidence": "Medium" },
+  { "waterBodyId": "porur", "type": "Flood Exposure", "year": 2025, "finding": "The surrounding flood-exposure layer shows moderate sensitivity.", "data": "Demo flood layer", "confidence": "Medium" },
+
+  { "waterBodyId": "korattur", "type": "Historical Observation", "year": 1990, "finding": "The lake previously covered a larger basin with more open water.", "data": "Water area 118 ha", "confidence": "High" },
+  { "waterBodyId": "korattur", "type": "Historical Observation", "year": 2025, "finding": "Current water extent is smaller and more tightly constrained by urban edges.", "data": "Water area 55 ha", "confidence": "High" },
+  { "waterBodyId": "korattur", "type": "Built-up Change", "year": 2000, "finding": "Urban conversion around the basin edge became a prominent pattern.", "data": "Built-up area 21 ha to 60 ha", "confidence": "High" },
+
+  { "waterBodyId": "chembarambakkam", "type": "Historical Observation", "year": 1990, "finding": "The lake retained a larger footprint with moderate seasonal fluctuation.", "data": "Water area 200 ha", "confidence": "High" },
+  { "waterBodyId": "chembarambakkam", "type": "Historical Observation", "year": 2025, "finding": "The lake remains comparatively intact, though the footprint is smaller than the historical baseline.", "data": "Water area 163 ha", "confidence": "High" },
+  { "waterBodyId": "chembarambakkam", "type": "Water Area Change", "year": 1990, "finding": "The observed drop is lower than the most severe cases in the dataset.", "data": "Loss of 37 ha", "confidence": "Medium" }
+]

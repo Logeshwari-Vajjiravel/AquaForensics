@@ -1,0 +1,36 @@
+[
+  { "waterBodyId": "pallikaranai", "category": "Buildings", "hectares": 31 },
+  { "waterBodyId": "pallikaranai", "category": "Roads", "hectares": 8 },
+  { "waterBodyId": "pallikaranai", "category": "Agriculture", "hectares": 14 },
+  { "waterBodyId": "pallikaranai", "category": "Vegetation", "hectares": 11 },
+  { "waterBodyId": "pallikaranai", "category": "Bare Land", "hectares": 7 },
+  { "waterBodyId": "pallikaranai", "category": "Other", "hectares": 6 },
+
+  { "waterBodyId": "velachery", "category": "Buildings", "hectares": 25 },
+  { "waterBodyId": "velachery", "category": "Roads", "hectares": 9 },
+  { "waterBodyId": "velachery", "category": "Agriculture", "hectares": 8 },
+  { "waterBodyId": "velachery", "category": "Vegetation", "hectares": 10 },
+  { "waterBodyId": "velachery", "category": "Bare Land", "hectares": 4 },
+  { "waterBodyId": "velachery", "category": "Other", "hectares": 2 },
+
+  { "waterBodyId": "porur", "category": "Buildings", "hectares": 15 },
+  { "waterBodyId": "porur", "category": "Roads", "hectares": 6 },
+  { "waterBodyId": "porur", "category": "Agriculture", "hectares": 7 },
+  { "waterBodyId": "porur", "category": "Vegetation", "hectares": 9 },
+  { "waterBodyId": "porur", "category": "Bare Land", "hectares": 5 },
+  { "waterBodyId": "porur", "category": "Other", "hectares": 2 },
+
+  { "waterBodyId": "korattur", "category": "Buildings", "hectares": 22 },
+  { "waterBodyId": "korattur", "category": "Roads", "hectares": 11 },
+  { "waterBodyId": "korattur", "category": "Agriculture", "hectares": 9 },
+  { "waterBodyId": "korattur", "category": "Vegetation", "hectares": 12 },
+  { "waterBodyId": "korattur", "category": "Bare Land", "hectares": 6 },
+  { "waterBodyId": "korattur", "category": "Other", "hectares": 3 },
+
+  { "waterBodyId": "chembarambakkam", "category": "Buildings", "hectares": 11 },
+  { "waterBodyId": "chembarambakkam", "category": "Roads", "hectares": 5 },
+  { "waterBodyId": "chembarambakkam", "category": "Agriculture", "hectares": 8 },
+  { "waterBodyId": "chembarambakkam", "category": "Vegetation", "hectares": 7 },
+  { "waterBodyId": "chembarambakkam", "category": "Bare Land", "hectares": 4 },
+  { "waterBodyId": "chembarambakkam", "category": "Other", "hectares": 2 }
+]

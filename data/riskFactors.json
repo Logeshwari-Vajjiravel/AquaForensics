@@ -1,0 +1,7 @@
+[
+  { "waterBodyId": "pallikaranai", "waterLoss": 0.62, "urbanDevelopment": 0.91, "floodExposure": 0.82, "priority": "HIGH", "score": 89, "reason": "High historical water loss combined with dense nearby development and flood-sensitive conditions." },
+  { "waterBodyId": "velachery", "waterLoss": 0.60, "urbanDevelopment": 0.87, "floodExposure": 0.78, "priority": "HIGH", "score": 84, "reason": "Strong urban encroachment and reduced storage across multiple observation years." },
+  { "waterBodyId": "porur", "waterLoss": 0.41, "urbanDevelopment": 0.62, "floodExposure": 0.67, "priority": "MEDIUM", "score": 74, "reason": "Moderate water reduction and surrounding development keep the body in the investigation queue." },
+  { "waterBodyId": "korattur", "waterLoss": 0.53, "urbanDevelopment": 0.82, "floodExposure": 0.74, "priority": "HIGH", "score": 80, "reason": "Persistent loss and conversion around the edges make this a significant priority case." },
+  { "waterBodyId": "chembarambakkam", "waterLoss": 0.18, "urbanDevelopment": 0.34, "floodExposure": 0.59, "priority": "MEDIUM", "score": 68, "reason": "The lake retains much of its historical footprint but remains flood-sensitive and seasonally variable." }
+]

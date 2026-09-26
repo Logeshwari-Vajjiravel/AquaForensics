@@ -1,0 +1,31 @@
+[
+  { "waterBodyId": "pallikaranai", "year": 1990, "waterArea": 124, "builtUpArea": 12, "vegetationArea": 71, "classification": "Persistent Loss", "description": "Large historical marsh footprint with relatively limited urban edge development." },
+  { "waterBodyId": "pallikaranai", "year": 2000, "waterArea": 104, "builtUpArea": 27, "vegetationArea": 58, "classification": "Persistent Loss", "description": "Water extent declines as built-up land expands around the marsh fringe." },
+  { "waterBodyId": "pallikaranai", "year": 2010, "waterArea": 87, "builtUpArea": 41, "vegetationArea": 42, "classification": "Persistent Loss", "description": "Wetland fragmentation intensifies and the current footprint becomes more compact." },
+  { "waterBodyId": "pallikaranai", "year": 2020, "waterArea": 63, "builtUpArea": 57, "vegetationArea": 29, "classification": "Persistent Loss", "description": "Water area remains far below the historical baseline and built-up land covers much of the former edge." },
+  { "waterBodyId": "pallikaranai", "year": 2025, "waterArea": 47, "builtUpArea": 68, "vegetationArea": 20, "classification": "Persistent Loss", "description": "Current observation continues to show a much smaller water footprint and dense, nearby urban land use." },
+
+  { "waterBodyId": "velachery", "year": 1990, "waterArea": 96, "builtUpArea": 16, "vegetationArea": 61, "classification": "Persistent Loss", "description": "Lake footprint remains largely intact but urbanization becomes visible nearby." },
+  { "waterBodyId": "velachery", "year": 2000, "waterArea": 82, "builtUpArea": 28, "vegetationArea": 47, "classification": "Persistent Loss", "description": "Development begins to replace the lake edge and increase runoff pressure." },
+  { "waterBodyId": "velachery", "year": 2010, "waterArea": 68, "builtUpArea": 39, "vegetationArea": 33, "classification": "Persistent Loss", "description": "Water area diminishes substantially as built-up land intensifies." },
+  { "waterBodyId": "velachery", "year": 2020, "waterArea": 51, "builtUpArea": 52, "vegetationArea": 24, "classification": "Persistent Loss", "description": "The lake shrinks to a smaller, more isolated water body." },
+  { "waterBodyId": "velachery", "year": 2025, "waterArea": 38, "builtUpArea": 63, "vegetationArea": 17, "classification": "Persistent Loss", "description": "Current area remains markedly below the historical footprint with a strong urbanized fringe." },
+
+  { "waterBodyId": "porur", "year": 1990, "waterArea": 83, "builtUpArea": 15, "vegetationArea": 58, "classification": "Persistent Loss", "description": "Lake retained a wider historical footprint with relatively lower fringe urbanization." },
+  { "waterBodyId": "porur", "year": 2000, "waterArea": 77, "builtUpArea": 22, "vegetationArea": 51, "classification": "Persistent Loss", "description": "Water area begins to decline gradually as surrounding built-up area increases." },
+  { "waterBodyId": "porur", "year": 2010, "waterArea": 68, "builtUpArea": 29, "vegetationArea": 41, "classification": "Persistent Loss", "description": "Persistent contraction remains evident around the western and southern edges." },
+  { "waterBodyId": "porur", "year": 2020, "waterArea": 57, "builtUpArea": 38, "vegetationArea": 29, "classification": "Persistent Loss", "description": "Conversion of the edge begins to dominate the pattern surrounding the lake." },
+  { "waterBodyId": "porur", "year": 2025, "waterArea": 49, "builtUpArea": 46, "vegetationArea": 21, "classification": "Persistent Loss", "description": "Current water extent remains materially reduced compared with historical observations." },
+
+  { "waterBodyId": "korattur", "year": 1990, "waterArea": 118, "builtUpArea": 21, "vegetationArea": 64, "classification": "Persistent Loss", "description": "Basin retains a broad water footprint alongside a moderate urban edge." },
+  { "waterBodyId": "korattur", "year": 2000, "waterArea": 102, "builtUpArea": 32, "vegetationArea": 54, "classification": "Persistent Loss", "description": "Peripheral development leads to a more pronounced reduction in the open-water extent." },
+  { "waterBodyId": "korattur", "year": 2010, "waterArea": 89, "builtUpArea": 43, "vegetationArea": 39, "classification": "Persistent Loss", "description": "Urban conversion intensifies around the edge of the original basin." },
+  { "waterBodyId": "korattur", "year": 2020, "waterArea": 67, "builtUpArea": 54, "vegetationArea": 29, "classification": "Persistent Loss", "description": "Current state shows a smaller, more constrained water footprint." },
+  { "waterBodyId": "korattur", "year": 2025, "waterArea": 55, "builtUpArea": 60, "vegetationArea": 21, "classification": "Persistent Loss", "description": "The current evidence indicates a substantial reduction in water extent and strong urban replacement." },
+
+  { "waterBodyId": "chembarambakkam", "year": 1990, "waterArea": 200, "builtUpArea": 18, "vegetationArea": 76, "classification": "Seasonal Variation", "description": "The lake retains a broad historical footprint with visible seasonal fluctuation." },
+  { "waterBodyId": "chembarambakkam", "year": 2000, "waterArea": 191, "builtUpArea": 22, "vegetationArea": 75, "classification": "Seasonal Variation", "description": "Seasonal decline appears but the lake remains largely intact." },
+  { "waterBodyId": "chembarambakkam", "year": 2010, "waterArea": 184, "builtUpArea": 26, "vegetationArea": 70, "classification": "Seasonal Variation", "description": "Water body remains mostly stable but shows moderate shrinkage around the edges." },
+  { "waterBodyId": "chembarambakkam", "year": 2020, "waterArea": 172, "builtUpArea": 35, "vegetationArea": 62, "classification": "Seasonal Variation", "description": "Seasonal variability remains visible, while the lake does not collapse to a small fraction of its historical extent." },
+  { "waterBodyId": "chembarambakkam", "year": 2025, "waterArea": 163, "builtUpArea": 42, "vegetationArea": 57, "classification": "Seasonal Variation", "description": "Current observations still suggest a larger lake area than the highest-loss basins, but with notable seasonal and structural change." }
+]
