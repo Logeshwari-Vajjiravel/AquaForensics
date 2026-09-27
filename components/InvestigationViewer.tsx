@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import AquaMap, { type AquaMapLayerState } from "@/components/AquaMap";
 import {
@@ -28,56 +28,113 @@ const layerDefaults: AquaMapLayerState = {
 
 const pieColors = ["#3b82f6", "#8b5cf6", "#14b8a6", "#f59e0b", "#f87171", "#a3a3a3"];
 
+const QUESTIONS = [
+  "What happened to this water body?",
+  "How much water area has been lost?",
+  "What replaced the lost area?",
+  "Is this seasonal drying or permanent loss?",
+  "Why is this water body high priority?",
+  "What evidence supports this finding?",
+  "Summarize this investigation.",
+];
+
 function buildAIAnswer(question: string, waterBody: WaterBody) {
-  const observations = getHistoricalSeries(waterBody.id);
-  const replacement = getReplacementSeries(waterBody.id);
   const evidence = getEvidenceFor(waterBody.id);
   const risk = getRiskFactor(waterBody.id);
   const loss = getLossPercentage(waterBody);
 
-  const story: Record<string, { answer: string; evidence: string[] }> = {
+  const story: Record<string, { answer: string; evidence: string[]; confidence: number }> = {
     "What happened to this water body?": {
       answer: `${waterBody.name} shows a clear decline in water extent across the demonstration record. The historical footprint was ${waterBody.historicalArea} hectares compared with ${waterBody.currentArea} hectares today, a ${loss}% reduction in observed water extent.`,
       evidence: ["Historical observation", "Current observation", "Land-use change"],
+      confidence: 92,
     },
     "How much water area has been lost?": {
       answer: `Approximately ${getAreaLost(waterBody)} hectares of historical water area are no longer classified as water in this dataset. That is equivalent to a ${loss}% reduction from the historical baseline.`,
       evidence: ["Water area change", "Historical record"],
+      confidence: 95,
     },
     "What replaced the lost area?": {
       answer: `The dominant replacement pattern is urban conversion, with roads and built-up land driving most of the land-cover change. The dataset does not assert legal conclusions; it only documents the observed cover change.`,
       evidence: ["Land-use change", "Built-up growth"],
+      confidence: 84,
     },
     "Is this seasonal drying or permanent loss?": {
       answer: `The trend is more consistent with persistent loss than isolated seasonal drying. The water extent remains materially below the historical baseline across multiple observation years.`,
       evidence: ["Trend analysis", "Historical record"],
+      confidence: 78,
     },
     "Why is this water body high priority?": {
       answer: `This water body combines significant historical loss, notable urban development nearby, and flood sensitivity. The model score is ${risk?.score ?? 0}/100, and it is a decision-support indicator rather than a legal finding.`,
       evidence: ["Risk score", "Flood layer", "Drainage review"],
+      confidence: 88,
     },
     "What evidence supports this finding?": {
       answer: `The findings are grounded in the historical series, land-use replacement records, and the evidence list on this dashboard. Each claim is shown as a prototype finding rather than a verified field measurement.`,
       evidence: evidence.map((item) => `${item.type} ${item.year}`),
+      confidence: 90,
     },
     "Summarize this investigation.": {
       answer: `The investigation indicates persistent water decline, built-up replacement around the former boundary, and increased risk in the surrounding drainage context. These patterns are supported by the local demonstration dataset and should be treated as analytical evidence, not legal proof.`,
       evidence: ["Executive summary", "Risk analysis", "Evidence cards"],
+      confidence: 87,
     },
   };
 
-  return story[question] ?? {
-    answer: "Insufficient data available.",
-    evidence: ["No direct evidence in the current dataset"],
+  return (
+    story[question] ?? {
+      answer: "Insufficient data available.",
+      evidence: ["No direct evidence in the current dataset"],
+      confidence: 40,
+    }
+  );
+}
+
+// Deterministic pseudo-random generator seeded by a string, so the fake
+// "model metadata" (latency, token counts) stays stable per question
+// instead of reshuffling on every render / causing hydration mismatches.
+function seededRandom(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h << 5) - h + seed.charCodeAt(i);
+    h |= 0;
+  }
+  return () => {
+    h = (h * 9301 + 49297) % 233280;
+    return h / 233280;
   };
+}
+
+function useTypewriter(text: string, active: boolean, speedMs = 10) {
+  const [output, setOutput] = useState("");
+  useEffect(() => {
+    if (!active) {
+      setOutput("");
+      return;
+    }
+    setOutput("");
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setOutput(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speedMs);
+    return () => clearInterval(id);
+  }, [text, active, speedMs]);
+  return output;
 }
 
 export default function InvestigationViewer({ waterBody }: { waterBody: WaterBody }) {
   const [selectedYear, setSelectedYear] = useState<number>(2025);
-  const [selectedQuestion, setSelectedQuestion] = useState<string>("What happened to this water body?");
+  const [selectedQuestion, setSelectedQuestion] = useState<string>(QUESTIONS[0]);
+  const [isThinking, setIsThinking] = useState(false);
   const [comparisonPercent, setComparisonPercent] = useState<number>(58);
   const [layers, setLayers] = useState<AquaMapLayerState>(layerDefaults);
   const [reportVisible, setReportVisible] = useState<boolean>(false);
+  const [reportRevealCount, setReportRevealCount] = useState<number>(0);
+
+  const thinkingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const observations = getHistoricalSeries(waterBody.id);
   const replacement = getReplacementSeries(waterBody.id);
@@ -85,13 +142,74 @@ export default function InvestigationViewer({ waterBody }: { waterBody: WaterBod
   const risk = getRiskFactor(waterBody.id);
   const yearData = observations.map((obs) => ({ year: obs.year, waterArea: obs.waterArea }));
   const yearObservation = observations.find((obs) => obs.year === selectedYear) ?? observations[observations.length - 1];
-  const ai = buildAIAnswer(selectedQuestion, waterBody);
+  const ai = useMemo(() => buildAIAnswer(selectedQuestion, waterBody), [selectedQuestion, waterBody]);
   const priorityBodies = [...waterBodies].sort((a, b) => (b.priorityScore ?? 0) - (a.priorityScore ?? 0));
   const changePercent = useMemo(() => getLossPercentage(waterBody), [waterBody]);
+
+  const typedAnswer = useTypewriter(ai.answer, !isThinking, 10);
+
+  const rand = useMemo(() => seededRandom(`${waterBody.id}-${selectedQuestion}`), [waterBody.id, selectedQuestion]);
+  const latencySeconds = useMemo(() => (0.8 + rand() * 1.6).toFixed(1), [rand]);
+  const tokenCount = useMemo(() => Math.round(120 + rand() * 180), [rand]);
 
   const toggleLayer = (key: keyof AquaMapLayerState) => {
     setLayers((current) => ({ ...current, [key]: !current[key] }));
   };
+
+  const handleQuestion = (question: string) => {
+    setSelectedQuestion(question);
+    setIsThinking(true);
+    if (thinkingTimeout.current) clearTimeout(thinkingTimeout.current);
+    thinkingTimeout.current = setTimeout(() => setIsThinking(false), 900 + Math.random() * 500);
+  };
+
+  const reportTitles = [
+    "Water body overview", "Executive summary", "Historical reconstruction", "Water loss",
+    "Seasonal vs permanent loss", "Land-use replacement", "Flood & drainage context",
+    "Encroachment indicators", "Consequence priority", "Evidence", "Limitations", "Confidence",
+  ];
+
+  const reportPoints = useMemo(
+    () => [
+      `Water Body Overview: ${waterBody.name} is a ${waterBody.city} water body in ${waterBody.district}. The demonstration dataset indicates a ${getLossPercentage(waterBody)}% reduction in historical water extent since the earliest observation.`,
+      `Executive Summary: The available evidence shows a persistent decline in water extent from ${observations[0]?.year ?? 1990} to ${observations[observations.length - 1]?.year ?? 2025}. The body has lost ${getAreaLost(waterBody)} hectares compared with the historical footprint.`,
+      `Historical Reconstruction: The historical series shows the body was larger and more connected in the earlier record, while the current state is more fragmented and more heavily surrounded by urban land cover.`,
+      `Water Loss: ${getAreaLost(waterBody)} hectares have been lost, equivalent to a ${getLossPercentage(waterBody)}% decline from the historical footprint.`,
+      `Seasonal vs Permanent Loss: The current classification is ${observations[observations.length - 1]?.classification ?? "Persistent Loss"}. The pattern is more consistent with persistent loss than isolated seasonal drying.`,
+      `Land-use Replacement: The dominant replacement signal is urban conversion, with roads and buildings accounting for the largest share of the change in the local dataset.`,
+      `Flood & Drainage Context: Potential downstream flood exposure is considered as a risk factor, but the dataset does not establish a legal or hydrologic causation claim without a calibrated model.`,
+      `Encroachment Indicators: The evidence combines water-area decline, surrounding urban expansion, and edge conversion patterns to show a coherent encroachment story supported by the demo dataset.`,
+      `Consequence Priority: Priority is weighted by historical loss, urban exposure, and flood sensitivity. The score is designed to guide investigation sequencing rather than determine legal status.`,
+      `Evidence: The evidence record includes historical observations, land-use conversion notes, and flood-risk indicators drawn from the current study dataset.`,
+      `Limitations: This is a prototype / demonstration dataset and should not be treated as a verified scientific, legal, or cadastral product.`,
+      `Confidence: Confidence is high for the broad reduction pattern and moderate for causal attribution. Additional field verification would be needed for legal or hydrological conclusions.`,
+    ],
+    [waterBody, observations]
+  );
+
+  // Stagger the "generation" of each report card when the report opens,
+  // so it reads like the model is writing section-by-section rather than
+  // dumping all twelve cards on screen instantly.
+  useEffect(() => {
+    if (revealTimeout.current) clearTimeout(revealTimeout.current);
+    if (!reportVisible) {
+      setReportRevealCount(0);
+      return;
+    }
+    setReportRevealCount(0);
+    let i = 0;
+    const revealNext = () => {
+      i += 1;
+      setReportRevealCount(i);
+      if (i < reportPoints.length) {
+        revealTimeout.current = setTimeout(revealNext, 350 + Math.random() * 300);
+      }
+    };
+    revealTimeout.current = setTimeout(revealNext, 400);
+    return () => {
+      if (revealTimeout.current) clearTimeout(revealTimeout.current);
+    };
+  }, [reportVisible, reportPoints.length]);
 
   return (
     <div className="min-h-screen bg-[#f3f7f6] text-slate-900">
@@ -155,16 +273,44 @@ export default function InvestigationViewer({ waterBody }: { waterBody: WaterBod
             <div className="rounded-[28px] border border-slate-200 bg-slate-950 p-5 text-slate-200 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
               <p className="text-[10px] uppercase tracking-[0.2em] text-sky-300">AI Water Investigator</p>
               <div className="mt-4 space-y-2">
-                {["What happened to this water body?", "How much water area has been lost?", "What replaced the lost area?", "Is this seasonal drying or permanent loss?", "Why is this water body high priority?", "What evidence supports this finding?", "Summarize this investigation."].map((question) => (
-                  <button key={question} onClick={() => setSelectedQuestion(question)} className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${selectedQuestion === question ? "border-sky-400 bg-sky-500/10 text-sky-100" : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"}`}>
+                {QUESTIONS.map((question) => (
+                  <button key={question} onClick={() => handleQuestion(question)} className={`w-full rounded-xl border px-3 py-2 text-left text-sm transition ${selectedQuestion === question ? "border-sky-400 bg-sky-500/10 text-sky-100" : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"}`}>
                     {question}
                   </button>
                 ))}
               </div>
 
               <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
-                <p className="text-sm font-medium text-slate-100">{selectedQuestion}</p>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{ai.answer}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-slate-100">{selectedQuestion}</p>
+                  <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-slate-400">AquaVision AI · v2.4</span>
+                </div>
+
+                {isThinking ? (
+                  <div className="mt-3 flex items-center gap-2 text-sm text-sky-300">
+                    <div className="flex gap-1">
+                      <span className="h-2 w-2 rounded-full bg-sky-400 animate-bounce" />
+                      <span className="h-2 w-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="h-2 w-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span>Analyzing satellite evidence...</span>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      {typedAnswer}
+                      {typedAnswer.length < ai.answer.length && <span className="ml-0.5 animate-pulse text-sky-400">▍</span>}
+                    </p>
+                    <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500">
+                      <span>Confidence {ai.confidence}%</span>
+                      <span>•</span>
+                      <span>{latencySeconds}s</span>
+                      <span>•</span>
+                      <span>{tokenCount} tokens</span>
+                    </div>
+                  </>
+                )}
+
                 <div className="mt-4 flex flex-wrap gap-2">
                   {ai.evidence.map((label) => (
                     <span key={label} className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-[11px] text-sky-100">{label}</span>
@@ -394,30 +540,57 @@ export default function InvestigationViewer({ waterBody }: { waterBody: WaterBod
         {reportVisible && (
           <section className="mb-8 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
             <div className="mb-4 flex items-center justify-between gap-4">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Investigation report</p><h2 className="mt-2 text-xl font-semibold text-slate-900">Executive summary</h2></div>
-              <button onClick={async () => { const { jsPDF } = await import("jspdf"); const pdf = new jsPDF(); pdf.text("AquaForensics Investigation Report", 14, 16); pdf.text("Prototype / Demonstration Dataset", 14, 24); pdf.text(`${waterBody.name} • ${waterBody.riskLevel} priority`, 14, 32); pdf.text(`Historical area: ${waterBody.historicalArea} ha`, 14, 40); pdf.text(`Current area: ${waterBody.currentArea} ha`, 14, 48); pdf.text(`Loss: ${getLossPercentage(waterBody)}%`, 14, 56); pdf.save("aquaforensics-report.pdf"); }} className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700">Export PDF</button>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Investigation report</p>
+                <h2 className="mt-2 text-xl font-semibold text-slate-900">Executive summary</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  {reportRevealCount < reportPoints.length
+                    ? `Generating section ${reportRevealCount + 1} of ${reportPoints.length}...`
+                    : `Report generated · AquaVision AI v2.4 · ${reportPoints.length} sections`}
+                </p>
+              </div>
+              <button
+                disabled={reportRevealCount < reportPoints.length}
+                onClick={async () => {
+                  const { jsPDF } = await import("jspdf");
+                  const pdf = new jsPDF();
+                  pdf.text("AquaForensics Investigation Report", 14, 16);
+                  pdf.text("Prototype / Demonstration Dataset", 14, 24);
+                  pdf.text(`${waterBody.name} • ${waterBody.riskLevel} priority`, 14, 32);
+                  pdf.text(`Historical area: ${waterBody.historicalArea} ha`, 14, 40);
+                  pdf.text(`Current area: ${waterBody.currentArea} ha`, 14, 48);
+                  pdf.text(`Loss: ${getLossPercentage(waterBody)}%`, 14, 56);
+                  pdf.save("aquaforensics-report.pdf");
+                }}
+                className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
+              >
+                Export PDF
+              </button>
             </div>
 
             <div className="space-y-6 text-sm leading-7 text-slate-700">
-              {[
-                `Water Body Overview: ${waterBody.name} is a ${waterBody.city} water body in ${waterBody.district}. The demonstration dataset indicates a ${getLossPercentage(waterBody)}% reduction in historical water extent since the earliest observation.`,
-                `Executive Summary: The available evidence shows a persistent decline in water extent from ${observations[0]?.year ?? 1990} to ${observations[observations.length - 1]?.year ?? 2025}. The body has lost ${getAreaLost(waterBody)} hectares compared with the historical footprint.`,
-                `Historical Reconstruction: The historical series shows the body was larger and more connected in the earlier record, while the current state is more fragmented and more heavily surrounded by urban land cover.`,
-                `Water Loss: ${getAreaLost(waterBody)} hectares have been lost, equivalent to a ${getLossPercentage(waterBody)}% decline from the historical footprint.`,
-                `Seasonal vs Permanent Loss: The current classification is ${observations[observations.length - 1]?.classification ?? "Persistent Loss"}. The pattern is more consistent with persistent loss than isolated seasonal drying.`,
-                `Land-use Replacement: The dominant replacement signal is urban conversion, with roads and buildings accounting for the largest share of the change in the local dataset.`,
-                `Flood & Drainage Context: Potential downstream flood exposure is considered as a risk factor, but the dataset does not establish a legal or hydrologic causation claim without a calibrated model.`,
-                `Encroachment Indicators: The evidence combines water-area decline, surrounding urban expansion, and edge conversion patterns to show a coherent encroachment story supported by the demo dataset.`,
-                `Consequence Priority: Priority is weighted by historical loss, urban exposure, and flood sensitivity. The score is designed to guide investigation sequencing rather than determine legal status.`,
-                `Evidence: The evidence record includes historical observations, land-use conversion notes, and flood-risk indicators drawn from the current study dataset.`,
-                `Limitations: This is a prototype / demonstration dataset and should not be treated as a verified scientific, legal, or cadastral product.`,
-                `Confidence: Confidence is high for the broad reduction pattern and moderate for causal attribution. Additional field verification would be needed for legal or hydrological conclusions.`
-              ].map((content, index) => (
-                <div key={content} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{index + 1}. Summary point</p>
-                  <p className="mt-2 text-base text-slate-700">{content}</p>
-                </div>
-              ))}
+              {reportPoints.map((content, index) => {
+                const isGenerated = index < reportRevealCount;
+                return (
+                  <div key={reportTitles[index]} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      {index + 1}. {reportTitles[index]}
+                    </p>
+                    {!isGenerated ? (
+                      <div className="mt-4 flex items-center gap-3 text-sm text-slate-400">
+                        <div className="flex gap-1">
+                          <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce" />
+                          <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="h-2 w-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                        <span>Drafting this section...</span>
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm leading-6 text-slate-700">{content}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
