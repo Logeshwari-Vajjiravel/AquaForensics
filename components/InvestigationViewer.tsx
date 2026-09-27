@@ -27,6 +27,146 @@ const layerDefaults: AquaMapLayerState = {
 };
 
 const pieColors = ["#3b82f6", "#8b5cf6", "#14b8a6", "#f59e0b", "#f87171", "#a3a3a3"];
+const LAKE_PATH =
+  "M150,60 C205,55 258,80 275,120 C292,160 278,195 285,225 C292,258 255,285 210,288 " +
+  "C178,290 155,278 122,282 C82,286 45,258 42,218 C39,180 62,158 58,120 " +
+  "C54,85 92,58 130,60 C137,61 143,61 150,60 Z";
+
+// Rough visual centroid of LAKE_PATH, used as the scale origin so the
+// "current" blob shrinks inward from the same center as the historical one.
+const LAKE_CENTER = { x: 163, y: 172 };
+
+// Anchor points near the outer boundary of LAKE_PATH — used to scatter
+// "encroachment" buildings/roads in the ring between the two boundaries.
+const BOUNDARY_ANCHORS = [
+  { x: 150, y: 62 }, { x: 272, y: 118 }, { x: 283, y: 222 },
+  { x: 208, y: 286 }, { x: 124, y: 280 }, { x: 44, y: 216 }, { x: 60, y: 122 },
+];
+
+function SatelliteScene({
+  variant,
+  scale = 1,
+  lossPercent,
+  lat,
+  lng,
+}: {
+  variant: "historical" | "current";
+  scale?: number;
+  lossPercent?: number;
+  lat?: number;
+  lng?: number;
+}) {
+  const isCurrent = variant === "current";
+  const clampedScale = Math.min(1, Math.max(0.35, scale));
+
+  return (
+    <svg viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
+      <defs>
+        <filter id={`noise-${variant}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed={isCurrent ? 7 : 3} result="n" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.05  0 0 0 0 0.2  0 0 0 0 0.35  0 0 0 0.25 0" />
+        </filter>
+        <radialGradient id={`terrain-${variant}`} cx="30%" cy="25%" r="85%">
+          {isCurrent ? (
+            <>
+              <stop offset="0%" stopColor="#2a2620" />
+              <stop offset="55%" stopColor="#1c1a17" />
+              <stop offset="100%" stopColor="#0e0d0b" />
+            </>
+          ) : (
+            <>
+              <stop offset="0%" stopColor="#1c3b2e" />
+              <stop offset="55%" stopColor="#14251d" />
+              <stop offset="100%" stopColor="#0b1512" />
+            </>
+          )}
+        </radialGradient>
+        <linearGradient id={`water-${variant}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={isCurrent ? "#22d3ee" : "#38bdf8"} stopOpacity="0.92" />
+          <stop offset="100%" stopColor={isCurrent ? "#0e7490" : "#075985"} stopOpacity="0.96" />
+        </linearGradient>
+        <pattern id="encroach-hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width="7" height="7" fill="#7c2d12" opacity="0.4" />
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#f59e0b" strokeWidth="2" opacity="0.55" />
+        </pattern>
+      </defs>
+
+      <rect width="400" height="320" fill={`url(#terrain-${variant})`} />
+
+      <g stroke="rgba(148,163,184,0.08)" strokeWidth="1">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <line key={`v-${i}`} x1={i * 20} y1="0" x2={i * 20} y2="320" />
+        ))}
+        {Array.from({ length: 16 }).map((_, i) => (
+          <line key={`h-${i}`} x1="0" y1={i * 20} x2="400" y2={i * 20} />
+        ))}
+      </g>
+
+      <rect width="400" height="320" opacity="0.3" filter={`url(#noise-${variant})`} />
+
+      {isCurrent ? (
+        <>
+          {/* lost-water ring: full historical footprint filled with the encroachment hatch */}
+          <path d={LAKE_PATH} fill="url(#encroach-hatch)" />
+          <path d={LAKE_PATH} fill="none" stroke="rgba(125,211,252,0.55)" strokeWidth="2" strokeDasharray="6 5" />
+
+          {/* current, shrunk footprint covers the center, leaving only the ring visible */}
+          <g style={{ transformOrigin: `${LAKE_CENTER.x}px ${LAKE_CENTER.y}px`, transform: `scale(${clampedScale})` }}>
+            <path d={LAKE_PATH} fill={`url(#water-${variant})`} stroke="#5eead4" strokeWidth="2.5" />
+            <path d={LAKE_PATH} opacity="0.25" filter={`url(#noise-${variant})`} />
+          </g>
+
+          {/* encroachment: buildings + roads scattered in the reclaimed ring */}
+          <g fill="#d6d3d1" opacity="0.9">
+            {BOUNDARY_ANCHORS.map((p, i) => (
+              <rect key={i} x={p.x - 5} y={p.y - 4} width={7 + (i % 3)} height={6 + (i % 2) * 3} transform={`rotate(${(i * 37) % 90} ${p.x} ${p.y})`} />
+            ))}
+          </g>
+          <g stroke="#a8a29e" strokeWidth="1.4" opacity="0.65">
+            {BOUNDARY_ANCHORS.slice(0, 5).map((p, i) => (
+              <line key={i} x1={p.x} y1={p.y} x2={p.x + (i % 2 === 0 ? 22 : -22)} y2={p.y + (i % 2 === 0 ? -14 : 14)} />
+            ))}
+          </g>
+        </>
+      ) : (
+        <>
+          <path d={LAKE_PATH} fill={`url(#water-${variant})`} stroke="#7dd3fc" strokeWidth="2.5" />
+          <path d={LAKE_PATH} opacity="0.25" filter={`url(#noise-${variant})`} />
+        </>
+      )}
+
+      <rect width="400" height="320" className="sat-scan" fill="url(#scan-gradient)" />
+      <defs>
+        <linearGradient id="scan-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="white" stopOpacity="0" />
+          <stop offset="48%" stopColor="white" stopOpacity="0" />
+          <stop offset="50%" stopColor="white" stopOpacity="0.07" />
+          <stop offset="52%" stopColor="white" stopOpacity="0" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {typeof lat === "number" && typeof lng === "number" && (
+        <text x="12" y="22" fill="#bae6fd" fontFamily="monospace" fontSize="10" opacity="0.85">
+          {lat.toFixed(4)}°N, {lng.toFixed(4)}°E · SAT-7 optical
+        </text>
+      )}
+      {isCurrent && typeof lossPercent === "number" && (
+        <text x="388" y="22" fill="#fca5a5" fontFamily="monospace" fontSize="10" textAnchor="end" opacity="0.9">
+          −{lossPercent}% vs baseline
+        </text>
+      )}
+
+      <style>{`
+        .sat-scan { animation: satscan 6s linear infinite; }
+        @keyframes satscan {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100%); }
+        }
+      `}</style>
+    </svg>
+  );
+}
 
 const QUESTIONS = [
   "What happened to this water body?",
@@ -370,6 +510,62 @@ export default function InvestigationViewer({ waterBody }: { waterBody: WaterBod
           <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Before / after</p>
             <h2 className="mt-2 text-xl font-semibold text-slate-900">Water-body extent comparison</h2>
+                    <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Before / after</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-900">Water-body extent comparison</h2>
+
+          {/* ↓↓↓ NEW: replaces everything that used to be here ↓↓↓ */}
+          <div className="relative mt-5 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-900">
+            <div className="relative h-[320px] w-full">
+              {/* base layer: current, urbanized imagery */}
+              <div className="absolute inset-0">
+                <SatelliteScene
+                  variant="current"
+                  scale={Math.sqrt(waterBody.currentArea / Math.max(1, waterBody.historicalArea))}
+                  lossPercent={changePercent}
+                  lat={waterBody.latitude}
+                  lng={waterBody.longitude}
+                />
+              </div>
+
+              {/* overlay layer: historical imagery, revealed by the slider */}
+              <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - comparisonPercent}% 0 0)` }}>
+                <SatelliteScene variant="historical" lat={waterBody.latitude} lng={waterBody.longitude} />
+              </div>
+
+              <div className="absolute inset-y-0 z-30 w-[2px] bg-white/80" style={{ left: `${comparisonPercent}%` }} />
+              <div
+                className="absolute top-1/2 z-40 flex -translate-y-1/2 items-center justify-center rounded-full border border-white bg-slate-900/80 p-2 text-sm font-semibold text-white"
+                style={{ left: `calc(${comparisonPercent}% - 16px)` }}
+              >
+                ↔
+              </div>
+
+              <div className="absolute bottom-10 left-4 rounded-full bg-slate-900/70 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-sky-100 backdrop-blur">
+                Historical imagery
+              </div>
+              <div className="absolute bottom-10 right-4 rounded-full bg-slate-900/70 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-100 backdrop-blur">
+                Current imagery
+              </div>
+
+              <input
+                aria-label="Comparison slider"
+                type="range"
+                min={0}
+                max={100}
+                value={comparisonPercent}
+                onChange={(event) => setComparisonPercent(Number(event.target.value))}
+                className="absolute inset-x-0 bottom-3 z-50 mx-auto w-[90%] accent-sky-500"
+              />
+            </div>
+          </div>
+          {/* ↑↑↑ NEW block ends here ↑↑↑ */}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-xs uppercase tracking-[0.18em] text-slate-500">Extent decreased by</p><p className="mt-2 text-2xl font-semibold text-slate-900">{changePercent}%</p></div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-xs uppercase tracking-[0.18em] text-slate-500">Built-up increased by</p><p className="mt-2 text-2xl font-semibold text-slate-900">{risk ? Math.round((risk.urbanDevelopment ?? 0) * 100) : 0}%</p></div>
+          </div>
+        </div>
 
             <div className="relative mt-5 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-900">
               <div className="grid h-[320px] grid-cols-2 overflow-hidden">
